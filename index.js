@@ -5,7 +5,7 @@ import {
 } from './core.js';
 
 const MODULE_ID = 'sillytavern-clinepass-provider-monitor';
-const MODULE_LABEL = 'ClinePass Provider Monitor';
+const MODULE_LABEL = 'ClinePass 路由監察';
 const GENERATE_PATH = '/api/backends/chat-completions/generate';
 const DEFAULT_SETTINGS = Object.freeze({
     enabled: true,
@@ -19,14 +19,14 @@ let wrappedFetch;
 let lifecycleEnabled = true;
 
 const status = {
-    phase: 'Idle',
+    phase: '等待生成',
     model: '',
     expectedProvider: '',
     actualProvider: '',
     attemptCount: null,
     attemptProviders: [],
     result: 'unknown',
-    note: 'Generate with a cline-pass/* model to inspect its response metadata.',
+    note: '使用 cline-pass/* 模型生成後，這裡會顯示最終路由結果。',
     updatedAt: '',
 };
 
@@ -46,33 +46,48 @@ function saveSettings() {
 }
 
 function setStatus(patch) {
-    Object.assign(status, patch, { updatedAt: new Date().toLocaleTimeString() });
+    Object.assign(status, patch, {
+        updatedAt: new Date().toLocaleTimeString('zh-Hant', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+        }),
+    });
     renderStatus();
 }
 
+function setText(id, value) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.textContent = value;
+    }
+}
+
 function renderStatus() {
-    const element = document.getElementById('clinepass-monitor-status');
-    if (!element) {
+    const stateElement = document.getElementById('clinepass-monitor-state');
+    if (!stateElement) {
         return;
     }
 
-    const resultLabel = {
-        matched: 'MATCHED — final provider equals the expected provider',
-        mismatched: 'MISMATCH — final provider differs from the expected provider',
-        unknown: 'UNKNOWN — routing metadata was not available or was incomplete',
-    }[status.result] ?? status.result;
+    const isMonitoring = status.phase === '正在監察回應';
+    const visualResult = isMonitoring ? 'monitoring' : status.result;
+    const symbol = isMonitoring ? '…' : status.result === 'matched' ? '✓' : status.result === 'mismatched' ? '!' : '?';
+    const expected = status.expectedProvider || settings?.expectedProvider || '未設定';
 
-    element.textContent = [
-        `State: ${status.phase}`,
-        `Model: ${status.model || '-'}`,
-        `Expected: ${status.expectedProvider || '-'}`,
-        `Actual: ${status.actualProvider || '-'}`,
-        `Attempts: ${status.attemptCount ?? '-'}`,
-        `Attempt providers: ${status.attemptProviders.length ? status.attemptProviders.join(', ') : '-'}`,
-        `Result: ${resultLabel}`,
-        `Note: ${status.note || '-'}`,
-        `Updated: ${status.updatedAt || '-'}`,
-    ].join('\n');
+    stateElement.dataset.result = visualResult;
+    setText('clinepass-monitor-summary-badge', status.phase);
+    setText('clinepass-monitor-state-symbol', symbol);
+    setText('clinepass-monitor-state-title', status.phase);
+    setText('clinepass-monitor-updated', status.updatedAt || '尚未更新');
+    setText('clinepass-monitor-note', status.note || '—');
+    setText('clinepass-monitor-expected', expected);
+    setText('clinepass-monitor-actual', status.actualProvider || '尚未取得');
+    setText('clinepass-monitor-model', status.model || '尚未生成');
+    setText('clinepass-monitor-attempt-count', status.attemptCount ?? '—');
+    setText(
+        'clinepass-monitor-attempt-providers',
+        status.attemptProviders.length ? status.attemptProviders.join('、') : '尚未取得',
+    );
 }
 
 function getUrl(input) {
@@ -101,7 +116,7 @@ function describeGenerationRequest(input, init) {
             expectedProvider: String(settings.expectedProvider ?? '').trim(),
         };
     } catch (error) {
-        console.debug(`[${MODULE_LABEL}] Could not read the generation request`, error);
+        console.debug(`[${MODULE_LABEL}] 無法讀取這次生成請求`, error);
         return null;
     }
 }
@@ -112,7 +127,7 @@ async function inspectResponse(response, request) {
         const routing = extractRoutingMetadata(responseText);
         if (!routing) {
             setStatus({
-                phase: response.ok ? 'Response completed' : `HTTP ${response.status}`,
+                phase: response.ok ? '無法判斷' : `請求失敗（HTTP ${response.status}）`,
                 model: request.model,
                 expectedProvider: request.expectedProvider,
                 actualProvider: '',
@@ -120,16 +135,18 @@ async function inspectResponse(response, request) {
                 attemptProviders: [],
                 result: 'unknown',
                 note: response.ok
-                    ? 'No finalProvider/resolvedProvider field reached SillyTavern. The upstream relay may have stripped it.'
-                    : 'The request failed and no routing metadata was exposed.',
+                    ? '回應中沒有 finalProvider 或 resolvedProvider。上游轉發服務可能沒有保留這些資料。'
+                    : '請求失敗，而且回應中沒有可用的路由資料。',
             });
-            console.info(`[${MODULE_LABEL}] No routing metadata found for ${request.model}.`);
+            console.info(`[${MODULE_LABEL}] ${request.model} 的回應中沒有找到路由資料。`);
             return;
         }
 
         const summary = summarizeRouting(routing, request.expectedProvider);
         setStatus({
-            phase: response.ok ? 'Response inspected' : `HTTP ${response.status}`,
+            phase: response.ok
+                ? summary.result === 'matched' ? '服務商符合' : summary.result === 'mismatched' ? '服務商不符' : '無法判斷'
+                : `請求失敗（HTTP ${response.status}）`,
             model: request.model,
             expectedProvider: request.expectedProvider,
             actualProvider: summary.actualProvider,
@@ -137,16 +154,16 @@ async function inspectResponse(response, request) {
             attemptProviders: summary.attemptProviders,
             result: summary.result,
             note: summary.result === 'matched'
-                ? 'The response metadata confirms the expected final provider.'
+                ? '回應 metadata 顯示，最終服務商與你設定的預期代號一致。'
                 : summary.result === 'mismatched'
-                    ? 'The response metadata reports another final provider.'
-                    : 'Routing metadata was found, but it could not be compared conclusively.',
+                    ? '回應 metadata 顯示，實際使用了另一個服務商。'
+                    : '已找到部分路由資料，但內容不足以完成比對。',
         });
-        console.info(`[${MODULE_LABEL}] Routing metadata`, routing);
+        console.info(`[${MODULE_LABEL}] 完整路由 metadata`, routing);
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         setStatus({
-            phase: 'Inspection failed',
+            phase: '監察失敗',
             model: request.model,
             expectedProvider: request.expectedProvider,
             actualProvider: '',
@@ -155,7 +172,7 @@ async function inspectResponse(response, request) {
             result: 'unknown',
             note: message,
         });
-        console.debug(`[${MODULE_LABEL}] Response inspection failed`, error);
+        console.debug(`[${MODULE_LABEL}] 回應監察失敗`, error);
     }
 }
 
@@ -172,21 +189,21 @@ function installFetchObserver() {
 
         if (shouldInspect) {
             setStatus({
-                phase: 'Monitoring response',
+                phase: '正在監察回應',
                 model: request.model,
                 expectedProvider: request.expectedProvider,
                 actualProvider: '',
                 attemptCount: null,
                 attemptProviders: [],
                 result: 'unknown',
-                note: 'Waiting for the response stream to finish.',
+                note: '正在等待這次串流完成，原始回應仍會正常顯示。',
             });
 
             try {
                 const copy = response.clone();
                 void inspectResponse(copy, request);
             } catch (error) {
-                console.debug(`[${MODULE_LABEL}] Could not clone the generation response`, error);
+                console.debug(`[${MODULE_LABEL}] 無法建立回應副本`, error);
             }
         }
 
@@ -217,19 +234,26 @@ function bindUi() {
         settings.expectedProvider = providerInput.value.trim();
         providerInput.value = settings.expectedProvider;
         saveSettings();
+        if (!status.expectedProvider) {
+            renderStatus();
+        }
     });
 
     document.getElementById('clinepass-monitor-clear-status').addEventListener('click', () => {
         Object.assign(status, {
-            phase: 'Idle',
+            phase: '等待生成',
             model: '',
             expectedProvider: '',
             actualProvider: '',
             attemptCount: null,
             attemptProviders: [],
             result: 'unknown',
-            note: 'Status cleared. Generate with a cline-pass/* model to inspect its response metadata.',
-            updatedAt: new Date().toLocaleTimeString(),
+            note: '監察結果已清除。使用 cline-pass/* 模型生成後，這裡會顯示新的路由結果。',
+            updatedAt: new Date().toLocaleTimeString('zh-Hant', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+            }),
         });
         renderStatus();
     });
@@ -240,7 +264,7 @@ function bindUi() {
 async function initialize() {
     context = globalThis.SillyTavern?.getContext?.();
     if (!context) {
-        console.error(`[${MODULE_LABEL}] SillyTavern context is unavailable.`);
+        console.error(`[${MODULE_LABEL}] 無法取得 SillyTavern 執行環境。`);
         return;
     }
 
@@ -248,14 +272,14 @@ async function initialize() {
     const html = await context.renderExtensionTemplateAsync(`third-party/${MODULE_ID}`, 'settings');
     const target = document.getElementById('extensions_settings2') ?? document.getElementById('extensions_settings');
     if (!target) {
-        console.error(`[${MODULE_LABEL}] Extensions settings container was not found.`);
+        console.error(`[${MODULE_LABEL}] 找不到擴充設定容器。`);
         return;
     }
 
     target.insertAdjacentHTML('beforeend', html);
     bindUi();
     installFetchObserver();
-    console.info(`[${MODULE_LABEL}] Loaded in observation-only mode.`);
+    console.info(`[${MODULE_LABEL}] 已載入純監察模式。`);
 }
 
 export async function onEnable() {

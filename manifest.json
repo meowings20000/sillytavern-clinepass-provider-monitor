@@ -1,10 +1,10 @@
 {
-  "display_name": "ClinePass Provider Monitor",
+  "display_name": "ClinePass 路由監察",
   "loading_order": 100,
   "js": "index.js",
   "css": "style.css",
   "author": "meowings20000",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "homePage": "https://github.com/meowings20000/sillytavern-clinepass-provider-monitor",
   "auto_update": true,
   "minimum_client_version": "1.18.0",

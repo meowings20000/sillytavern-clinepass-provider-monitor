@@ -1,32 +1,93 @@
-<div id="clinepass-monitor-settings" class="clinepass-monitor-settings">
-    <details>
-        <summary>ClinePass Provider Monitor</summary>
-        <div class="clinepass-monitor-content">
-            <label class="checkbox_label" for="clinepass-monitor-enabled">
-                <input id="clinepass-monitor-enabled" type="checkbox">
-                <span>Monitor responses for <code>cline-pass/*</code> models</span>
-            </label>
-
-            <label for="clinepass-monitor-provider">Expected provider slug</label>
-            <input id="clinepass-monitor-provider" class="text_pole" type="text" spellcheck="false" placeholder="moonshotai">
-
-            <p class="clinepass-monitor-help">
-                Observation only: this extension does not inject request parameters, retry generations,
-                cancel streams, or change the response SillyTavern receives.
-            </p>
-
-            <p class="clinepass-monitor-help">
-                It reads a cloned copy of the completed response and searches for
-                <code>finalProvider</code>, <code>resolvedProvider</code>, and provider-attempt metadata.
-                If New API removes those fields, the result will be <strong>UNKNOWN</strong>.
-            </p>
-
-            <div class="clinepass-monitor-actions">
-                <button id="clinepass-monitor-clear-status" class="menu_button" type="button">Clear status</button>
+<div id="clinepass-monitor-settings" class="clinepass-monitor-settings" lang="zh-Hant">
+    <div class="inline-drawer">
+        <div class="inline-drawer-toggle inline-drawer-header">
+            <div class="clinepass-monitor-heading">
+                <i class="fa-solid fa-route" aria-hidden="true"></i>
+                <b>ClinePass 路由監察</b>
+                <span id="clinepass-monitor-summary-badge" class="clinepass-monitor-summary-badge">等待生成</span>
             </div>
-
-            <h4>Last observation</h4>
-            <pre id="clinepass-monitor-status" aria-live="polite"></pre>
+            <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
         </div>
-    </details>
+
+        <div class="inline-drawer-content">
+            <div class="clinepass-monitor-content">
+                <section id="clinepass-monitor-state" class="clinepass-monitor-state" data-result="unknown" aria-live="polite">
+                    <div class="clinepass-monitor-state-heading">
+                        <span id="clinepass-monitor-state-symbol" class="clinepass-monitor-state-symbol" aria-hidden="true">?</span>
+                        <div class="clinepass-monitor-state-copy">
+                            <small>最近一次監察</small>
+                            <strong id="clinepass-monitor-state-title">等待生成</strong>
+                        </div>
+                        <time id="clinepass-monitor-updated">尚未更新</time>
+                    </div>
+
+                    <p id="clinepass-monitor-note" class="clinepass-monitor-note">
+                        使用 cline-pass/* 模型生成後，這裡會顯示最終路由結果。
+                    </p>
+
+                    <div class="clinepass-monitor-route" aria-label="服務商路由比較">
+                        <div class="clinepass-monitor-route-node">
+                            <small>預期服務商</small>
+                            <strong id="clinepass-monitor-expected">moonshotai</strong>
+                        </div>
+                        <div class="clinepass-monitor-route-arrow" aria-hidden="true">
+                            <span></span>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </div>
+                        <div class="clinepass-monitor-route-node">
+                            <small>實際服務商</small>
+                            <strong id="clinepass-monitor-actual">尚未取得</strong>
+                        </div>
+                    </div>
+
+                    <dl class="clinepass-monitor-meta">
+                        <div class="clinepass-monitor-meta-wide">
+                            <dt>模型</dt>
+                            <dd id="clinepass-monitor-model">尚未生成</dd>
+                        </div>
+                        <div>
+                            <dt>路由嘗試次數</dt>
+                            <dd id="clinepass-monitor-attempt-count">—</dd>
+                        </div>
+                        <div>
+                            <dt>曾嘗試的服務商</dt>
+                            <dd id="clinepass-monitor-attempt-providers">尚未取得</dd>
+                        </div>
+                    </dl>
+                </section>
+
+                <section class="clinepass-monitor-controls" aria-label="監察設定">
+                    <label class="checkbox_label clinepass-monitor-toggle" for="clinepass-monitor-enabled">
+                        <input id="clinepass-monitor-enabled" class="checkbox" type="checkbox">
+                        <span class="clinepass-monitor-toggle-copy">
+                            <strong>啟用路由監察</strong>
+                            <small>只讀取 cline-pass/* 的回應，不會修改請求或干預生成。</small>
+                        </span>
+                    </label>
+
+                    <label for="clinepass-monitor-provider">預期服務商代號</label>
+                    <input id="clinepass-monitor-provider" class="text_pole" type="text" spellcheck="false" placeholder="例如：moonshotai">
+
+                    <p class="clinepass-monitor-hint">
+                        <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                        請填入回應 metadata 使用的精確代號。若 New API 沒有轉發路由資料，結果會顯示「無法判斷」。
+                    </p>
+
+                    <button id="clinepass-monitor-clear-status" class="menu_button" type="button">
+                        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+                        <span>清除監察結果</span>
+                    </button>
+                </section>
+
+                <details class="clinepass-monitor-help">
+                    <summary>如何理解監察結果？</summary>
+                    <ul>
+                        <li><strong>符合：</strong>最終服務商與你設定的預期代號一致。</li>
+                        <li><strong>不符：</strong>metadata 顯示實際使用了另一個服務商。</li>
+                        <li><strong>無法判斷：</strong>回應沒有帶回 finalProvider 或 resolvedProvider；這不代表一定沒有走 Moonshot。</li>
+                    </ul>
+                </details>
+            </div>
+        </div>
+    </div>
 </div>

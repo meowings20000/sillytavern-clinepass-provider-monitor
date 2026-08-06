@@ -1,66 +1,71 @@
-# ClinePass Provider Monitor for SillyTavern
+# SillyTavern ClinePass 路由監察
 
-An observation-only SillyTavern UI extension that reports which downstream provider a `cline-pass/*` response says it used.
+一個純監察的 SillyTavern 前端擴充，用來查看 `cline-pass/*` 回應所報告的最終下游服務商（Provider）。
 
-It watches SillyTavern's chat-completion response, reads a cloned copy of the stream, and looks for Cline/Vercel-style routing fields:
+介面使用 SillyTavern 原生抽屜、輸入框、按鈕與主題變數，會自動跟隨你目前的主題、美化 CSS、字體與顏色。手機和電腦版都可使用。
+
+## 能做甚麼
+
+擴充會讀取完成回應的副本，尋找 Cline／Vercel 類型的路由欄位：
 
 - `finalProvider`
 - `resolvedProvider`
 - `totalProviderAttemptCount`
-- provider-attempt records
+- Provider 嘗試記錄
 
-The extension compares the observed final provider with the expected provider slug you configure, then reports **MATCHED**, **MISMATCH**, or **UNKNOWN**.
+它會把觀察到的最終服務商與你設定的預期代號比較，顯示「服務商符合」、「服務商不符」或「無法判斷」。
 
-## Safety and scope
+## 安全範圍
 
-This extension is deliberately read-only:
+這個擴充只負責觀察：
 
-- It does not add or overwrite request parameters.
-- It does not retry, cancel, delay, or replace generations.
-- It does not read or store API keys.
-- It returns the original `Response` object to SillyTavern unchanged.
+- 不增加或覆寫任何請求參數。
+- 不重試、取消、延遲或替換生成。
+- 不讀取或儲存 API Key。
+- 原始 `Response` 會原封不動交回 SillyTavern。
 
-The response clone is inspected asynchronously after the stream finishes, so normal token streaming continues.
+回應副本會在串流結束後非同步檢查，不影響正常逐字顯示。
 
-## Install from SillyTavern
+## 從 SillyTavern 安裝
 
-1. Open **Extensions**.
-2. Choose **Install Extension**.
-3. Paste `https://github.com/meowings20000/sillytavern-clinepass-provider-monitor.git`.
-4. Install it for the current user (or all users, if desired).
-5. Reload SillyTavern if the panel does not appear immediately.
+1. 打開「擴充功能」。
+2. 選擇「安裝擴充功能」。
+3. 貼上 `https://github.com/meowings20000/sillytavern-clinepass-provider-monitor.git`。
+4. 選擇安裝給目前使用者或所有使用者。
+5. 如果沒有立即看到面板，重新整理 SillyTavern。
 
-The extension appears under **ClinePass Provider Monitor** in Extension settings.
+安裝完成後，可在擴充設定中找到「ClinePass 路由監察」。
 
-## Use
+## 使用方法
 
-1. Enable **Monitor responses for `cline-pass/*` models**.
-2. Set **Expected provider slug** to the exact provider identifier you expect, for example `moonshotai`.
-3. Generate a normal reply using a model such as `cline-pass/kimi-k3`.
-4. Wait for the stream to finish and read **Last observation**.
+1. 開啟「ClinePass 路由監察」。
+2. 勾選「啟用路由監察」。
+3. 把「預期服務商代號」設為你想確認的精確代號，例如 `moonshotai`。
+4. 使用 `cline-pass/kimi-k3` 等 `cline-pass/*` 模型正常生成。
+5. 等待串流結束，查看最近一次監察結果。
 
-The browser console also receives the complete routing object when one is found.
+瀏覽器開發者工具的 Console 也會輸出完整路由物件。
 
-## Result meanings
+## 結果解釋
 
-- **MATCHED**: response metadata contains the expected final provider.
-- **MISMATCH**: response metadata contains a different final provider.
-- **UNKNOWN**: no conclusive `finalProvider` or `resolvedProvider` reached SillyTavern.
+- **服務商符合**：回應 metadata 中的最終服務商與預期代號一致。
+- **服務商不符**：回應 metadata 顯示實際使用了另一個服務商。
+- **無法判斷**：沒有可確認的 `finalProvider` 或 `resolvedProvider` 傳到 SillyTavern。
 
-`UNKNOWN` is important: an OpenAI-compatible relay such as New API may consume or strip the upstream metadata. In that case this browser extension cannot prove the final provider. It does not guess from the model name or response text.
+「無法判斷」不代表一定沒有使用 Moonshot。New API 等 OpenAI 相容轉發服務可能消耗或移除上游 metadata；此時前端擴充不會根據模型名稱或文字內容猜測服務商。
 
-## Compatibility
+## 相容範圍
 
-- SillyTavern 1.18.0 or newer
-- Chat Completion requests generated through SillyTavern's `/api/backends/chat-completions/generate` endpoint
-- Model names beginning with `cline-pass/` (case-insensitive)
-- Streaming SSE and non-stream JSON responses
+- SillyTavern 1.18.0 或更新版本
+- 經由 `/api/backends/chat-completions/generate` 發出的 Chat Completion 請求
+- 名稱以 `cline-pass/` 開頭的模型，不分大小寫
+- SSE 串流與非串流 JSON 回應
 
-## Development
+## 開發檢查
 
 ```powershell
 npm test
 npm run check
 ```
 
-No runtime dependencies or build step are required.
+沒有執行階段套件依賴，也不需要編譯。
