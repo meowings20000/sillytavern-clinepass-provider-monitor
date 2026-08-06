@@ -1,0 +1,57 @@
+.clinepass-monitor-settings {
+    margin: 0.5rem 0;
+}
+
+.clinepass-monitor-settings > details {
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 88%, transparent);
+}
+
+.clinepass-monitor-settings summary {
+    cursor: pointer;
+    padding: 0.65rem 0.8rem;
+    font-weight: 700;
+}
+
+.clinepass-monitor-content {
+    display: grid;
+    gap: 0.65rem;
+    padding: 0 0.8rem 0.8rem;
+}
+
+.clinepass-monitor-content label:not(.checkbox_label),
+.clinepass-monitor-content h4 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.clinepass-monitor-content .checkbox_label {
+    align-items: flex-start;
+}
+
+.clinepass-monitor-help {
+    margin: 0;
+    color: var(--SmartThemeEmColor);
+    font-size: 0.9em;
+    line-height: 1.4;
+}
+
+.clinepass-monitor-content pre {
+    max-height: 14rem;
+    margin: 0;
+    padding: 0.65rem;
+    overflow: auto;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.22);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 0.86em;
+}
+
+.clinepass-monitor-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}

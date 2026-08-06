@@ -1,0 +1,10 @@
+{
+  "name": "sillytavern-clinepass-provider-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/core.test.mjs",
+    "check": "node --check core.js && node --check index.js && npm test"
+  }
+}

@@ -1,0 +1,32 @@
+<div id="clinepass-monitor-settings" class="clinepass-monitor-settings">
+    <details>
+        <summary>ClinePass Provider Monitor</summary>
+        <div class="clinepass-monitor-content">
+            <label class="checkbox_label" for="clinepass-monitor-enabled">
+                <input id="clinepass-monitor-enabled" type="checkbox">
+                <span>Monitor responses for <code>cline-pass/*</code> models</span>
+            </label>
+
+            <label for="clinepass-monitor-provider">Expected provider slug</label>
+            <input id="clinepass-monitor-provider" class="text_pole" type="text" spellcheck="false" placeholder="moonshotai">
+
+            <p class="clinepass-monitor-help">
+                Observation only: this extension does not inject request parameters, retry generations,
+                cancel streams, or change the response SillyTavern receives.
+            </p>
+
+            <p class="clinepass-monitor-help">
+                It reads a cloned copy of the completed response and searches for
+                <code>finalProvider</code>, <code>resolvedProvider</code>, and provider-attempt metadata.
+                If New API removes those fields, the result will be <strong>UNKNOWN</strong>.
+            </p>
+
+            <div class="clinepass-monitor-actions">
+                <button id="clinepass-monitor-clear-status" class="menu_button" type="button">Clear status</button>
+            </div>
+
+            <h4>Last observation</h4>
+            <pre id="clinepass-monitor-status" aria-live="polite"></pre>
+        </div>
+    </details>
+</div>

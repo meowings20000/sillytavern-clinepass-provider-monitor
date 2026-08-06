@@ -1,0 +1,15 @@
+{
+  "display_name": "ClinePass Provider Monitor",
+  "loading_order": 100,
+  "js": "index.js",
+  "css": "style.css",
+  "author": "meowings20000",
+  "version": "1.0.0",
+  "homePage": "https://github.com/meowings20000/sillytavern-clinepass-provider-monitor",
+  "auto_update": true,
+  "minimum_client_version": "1.18.0",
+  "hooks": {
+    "enable": "onEnable",
+    "disable": "onDisable"
+  }
+}
